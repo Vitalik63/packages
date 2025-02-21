@@ -35,53 +35,53 @@ class GoogleMapController {
   }
 
   final _GoogleMapState _googleMapState;
+  List<StreamSubscription<dynamic>>? _subscriptions;
 
   void _connectStreams(int mapId) {
-    if (_googleMapState.widget.onCameraMoveStarted != null) {
+    _subscriptions = <StreamSubscription<dynamic>>[
+      if (_googleMapState.widget.onCameraMoveStarted != null)
+        GoogleMapsFlutterPlatform.instance
+            .onCameraMoveStarted(mapId: mapId)
+            .listen((_) => _googleMapState.widget.onCameraMoveStarted!()),
+      if (_googleMapState.widget.onCameraMove != null)
+        GoogleMapsFlutterPlatform.instance.onCameraMove(mapId: mapId).listen(
+            (CameraMoveEvent e) =>
+                _googleMapState.widget.onCameraMove!(e.value)),
+      if (_googleMapState.widget.onCameraIdle != null)
+        GoogleMapsFlutterPlatform.instance
+            .onCameraIdle(mapId: mapId)
+            .listen((_) => _googleMapState.widget.onCameraIdle!()),
       GoogleMapsFlutterPlatform.instance
-          .onCameraMoveStarted(mapId: mapId)
-          .listen((_) => _googleMapState.widget.onCameraMoveStarted!());
-    }
-    if (_googleMapState.widget.onCameraMove != null) {
-      GoogleMapsFlutterPlatform.instance.onCameraMove(mapId: mapId).listen(
-          (CameraMoveEvent e) => _googleMapState.widget.onCameraMove!(e.value));
-    }
-    if (_googleMapState.widget.onCameraIdle != null) {
+          .onMarkerTap(mapId: mapId)
+          .listen((MarkerTapEvent e) => _googleMapState.onMarkerTap(e.value)),
+      GoogleMapsFlutterPlatform.instance.onMarkerDragStart(mapId: mapId).listen(
+          (MarkerDragStartEvent e) =>
+              _googleMapState.onMarkerDragStart(e.value, e.position)),
+      GoogleMapsFlutterPlatform.instance.onMarkerDrag(mapId: mapId).listen(
+          (MarkerDragEvent e) =>
+              _googleMapState.onMarkerDrag(e.value, e.position)),
+      GoogleMapsFlutterPlatform.instance.onMarkerDragEnd(mapId: mapId).listen(
+          (MarkerDragEndEvent e) =>
+              _googleMapState.onMarkerDragEnd(e.value, e.position)),
+      GoogleMapsFlutterPlatform.instance.onInfoWindowTap(mapId: mapId).listen(
+          (InfoWindowTapEvent e) => _googleMapState.onInfoWindowTap(e.value)),
+      GoogleMapsFlutterPlatform.instance.onPolylineTap(mapId: mapId).listen(
+          (PolylineTapEvent e) => _googleMapState.onPolylineTap(e.value)),
       GoogleMapsFlutterPlatform.instance
-          .onCameraIdle(mapId: mapId)
-          .listen((_) => _googleMapState.widget.onCameraIdle!());
-    }
-    GoogleMapsFlutterPlatform.instance
-        .onMarkerTap(mapId: mapId)
-        .listen((MarkerTapEvent e) => _googleMapState.onMarkerTap(e.value));
-    GoogleMapsFlutterPlatform.instance.onMarkerDragStart(mapId: mapId).listen(
-        (MarkerDragStartEvent e) =>
-            _googleMapState.onMarkerDragStart(e.value, e.position));
-    GoogleMapsFlutterPlatform.instance.onMarkerDrag(mapId: mapId).listen(
-        (MarkerDragEvent e) =>
-            _googleMapState.onMarkerDrag(e.value, e.position));
-    GoogleMapsFlutterPlatform.instance.onMarkerDragEnd(mapId: mapId).listen(
-        (MarkerDragEndEvent e) =>
-            _googleMapState.onMarkerDragEnd(e.value, e.position));
-    GoogleMapsFlutterPlatform.instance.onInfoWindowTap(mapId: mapId).listen(
-        (InfoWindowTapEvent e) => _googleMapState.onInfoWindowTap(e.value));
-    GoogleMapsFlutterPlatform.instance
-        .onPolylineTap(mapId: mapId)
-        .listen((PolylineTapEvent e) => _googleMapState.onPolylineTap(e.value));
-    GoogleMapsFlutterPlatform.instance
-        .onPolygonTap(mapId: mapId)
-        .listen((PolygonTapEvent e) => _googleMapState.onPolygonTap(e.value));
-    GoogleMapsFlutterPlatform.instance
-        .onCircleTap(mapId: mapId)
-        .listen((CircleTapEvent e) => _googleMapState.onCircleTap(e.value));
-    GoogleMapsFlutterPlatform.instance
-        .onTap(mapId: mapId)
-        .listen((MapTapEvent e) => _googleMapState.onTap(e.position));
-    GoogleMapsFlutterPlatform.instance.onLongPress(mapId: mapId).listen(
-        (MapLongPressEvent e) => _googleMapState.onLongPress(e.position));
-    GoogleMapsFlutterPlatform.instance
-        .onClusterTap(mapId: mapId)
-        .listen((ClusterTapEvent e) => _googleMapState.onClusterTap(e.value));
+          .onPolygonTap(mapId: mapId)
+          .listen((PolygonTapEvent e) => _googleMapState.onPolygonTap(e.value)),
+      GoogleMapsFlutterPlatform.instance
+          .onCircleTap(mapId: mapId)
+          .listen((CircleTapEvent e) => _googleMapState.onCircleTap(e.value)),
+      GoogleMapsFlutterPlatform.instance
+          .onTap(mapId: mapId)
+          .listen((MapTapEvent e) => _googleMapState.onTap(e.position)),
+      GoogleMapsFlutterPlatform.instance.onLongPress(mapId: mapId).listen(
+          (MapLongPressEvent e) => _googleMapState.onLongPress(e.position)),
+      GoogleMapsFlutterPlatform.instance
+          .onClusterTap(mapId: mapId)
+          .listen((ClusterTapEvent e) => _googleMapState.onClusterTap(e.value)),
+    ];
   }
 
   /// Updates configuration options of the map user interface.
@@ -303,5 +303,9 @@ class GoogleMapController {
   /// Disposes of the platform resources
   void dispose() {
     GoogleMapsFlutterPlatform.instance.dispose(mapId: mapId);
+    _subscriptions?.forEach(
+      (StreamSubscription<dynamic> subscription) => subscription.cancel(),
+    );
+    _subscriptions = null;
   }
 }
